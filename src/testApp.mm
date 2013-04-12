@@ -12,11 +12,15 @@ void testApp::setup(){
 //	ofSetWindowShape(1024 , 768);
 
 	dir.allowExt("m4v");
-	dir.listDir("movies");
+	dir.listDir(ofxiPhoneGetDocumentsDirectory());
 
 	ofBackground(127,127,127);
 	currentVideoIdx = 0;
 	if(dir.getFiles().size()>0)player.loadMovie(dir.getPath(currentVideoIdx));
+	else
+	{
+
+	}
 	player.play();
 	player.setLoopState(OF_LOOP_NORMAL);
 	// Get an integer and a string value
@@ -39,30 +43,25 @@ void testApp::setup(){
 
 //--------------------------------------------------------------
 void testApp::update(){
+	if(prevVideoIndex!=currentVideoIdx)
+	{
+		player.stop();
+		player.loadMovie(dir.getPath(currentVideoIdx));
+		player.play();
+		player.setLoopState(OF_LOOP_NORMAL);
+		prevVideoIndex = currentVideoIdx;
+	}
 	if(player.isLoaded())player.update();
 	//we are connected - lets send our text and check what we get back
 	if(weConnected){
-		if(ofGetFrameNum()%10==0)tcpClient.send(ofToString(player.getPosition()));
+		if(ofGetFrameNum()%10==0)tcpClient.send("timecode_"+ofToString(player.getPosition()));
 		string msg = tcpClient.receive();
-		ofLogVerbose() << msg;
-		if(msg=="NEXT")
+		if(msg.find("video_")!=string::npos)
 		{
-			if(currentVideoIdx<dir.getFiles().size())
-			{
-				currentVideoIdx++;
-			currentVideoIdx%=dir.getFiles().size();
-				player.loadMovie(dir.getPath(currentVideoIdx));
-			}
+			string sub = msg.substr(7,string::npos);
+			ofLogVerbose()<< sub;
 		}
-		else if (msg == "PREV")
-		{
-			if(currentVideoIdx>0)
-			{
-				currentVideoIdx--;
-				
-				player.loadMovie(dir.getPath(currentVideoIdx));
-			}
-		}
+		
 		if(!tcpClient.isConnected()){
 			weConnected = false;
 		}
@@ -91,7 +90,9 @@ void testApp::exit(){
 
 //--------------------------------------------------------------
 void testApp::touchDown(ofTouchEventArgs & touch){
-	player.play();
+	currentVideoIdx++;
+	currentVideoIdx%=dir.getFiles().size();
+	tcpClient.send("video_"+ofToString(currentVideoIdx));
 }
 
 //--------------------------------------------------------------
