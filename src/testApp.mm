@@ -54,7 +54,8 @@ void testApp::update(){
 	if(player.isLoaded())player.update();
 	//we are connected - lets send our text and check what we get back
 	if(weConnected){
-		if(ofGetFrameNum()%10==0)tcpClient.send("timecode_"+ofToString(player.getPosition()));
+		unsigned long time = ofGetSystemTime();
+		if(ofGetFrameNum()%10==0)tcpClient.send("timecode_"+ofToString(player.getPosition())+"_"+ofToString(time));
 		string msg = tcpClient.receive();
 		if(msg.find("video_")!=string::npos)
 		{
